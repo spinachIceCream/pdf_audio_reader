@@ -3,13 +3,11 @@
 ScholarVoice is a web application that converts academic PDF papers into clean, read-aloud audio. It uses Google's Gemini AI to extract the main text from PDFs (filtering out references, headers, and figures) and uses the browser's Text-to-Speech engine for playback.
 
 ## Features
-
 - **Smart Extraction**: Uses Gemini AI to extract only the relevant content from academic papers.
 - **Audio Playback**: Listen to your papers with sentence-by-sentence navigation.
 - **Speed Control**: Adjust reading speed from 0.75x to 4.0x.
-- **Voice Selection**: Choose from available browser voices (defaults to "Clara Canada" if available).
+- **Voice Selection**: Choose from available browser voices.
 - **Saved Papers**: Automatically saves processed papers to your browser's local storage for offline access.
-- **Rename Papers**: Organize your library by renaming saved papers.
 
 ## How to Use
 
