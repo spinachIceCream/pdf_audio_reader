@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Audio Reader</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Load PDF.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Initialize PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar for Saved Papers -->
+        <aside id="saved-papers-sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Saved Papers</h3>
+            </div>
+            <ul id="saved-papers-list">
+                <!-- Saved papers will be populated here -->
+            </ul>
+        </aside>
+
+        <div class="content-area">
+            <header>
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                        <path
+                            d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z">
+                        </path>
+                    </svg>
+                    <span>ScholarVoice</span>
+                </div>
+                <div class="header-controls">
+                    <div class="api-key-container"
+                        style="display: flex; flex-direction: column; align-items: flex-end;">
+                        <input type="password" id="api-key-input" placeholder="Enter Gemini API Key" class="api-input"
+                            value="">
+                        <small style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">
+                            Get free key at <a href="https://aistudio.google.com/" target="_blank"
+                                style="color: var(--primary-color);">Google AI Studio</a> (bottom left)
+                        </small>
+                    </div>
+                    <select id="model-select" class="model-select"
+                        style="padding: 0.625rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; margin-right: 0.5rem; max-width: 200px; font-size: 0.875rem;">
+                        <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                        <option value="gemini-pro">Gemini Pro</option>
+                    </select>
+                    <button id="refresh-models-btn" title="Refresh Models"
+                        style="background:none; border:none; cursor:pointer; margin-right: 0.5rem; color: var(--text-secondary);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                    <button id="upload-btn" class="primary-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Upload PDF
+                    </button>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                </div>
+            </header>
+
+            <main>
+                <div id="upload-placeholder" class="upload-zone">
+                    <div class="icon-box">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h2>Drop your academic paper here</h2>
+                    <p>We'll use AI to extract the main text.</p>
+                </div>
+
+                <div id="player-interface" class="hidden">
+                    <div class="text-display" id="text-display">
+                        <!-- Text content will be injected here -->
+                    </div>
+
+                    <div class="controls-wrapper">
+                        <div class="progress-area">
+                            <span id="current-time">0:00</span>
+                            <input type="range" id="progress-bar" min="0" value="0" step="1">
+                            <span id="total-time">--:--</span>
+                        </div>
+
+                        <div class="main-controls">
+                            <div class="speed-control">
+                                <span class="label">Speed</span>
+                                <select id="speed-select">
+                                    <option value="0.75">0.75x</option>
+                                    <option value="1" selected>1.0x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                    <option value="2">2.0x</option>
+                                    <option value="2.5">2.5x</option>
+                                    <option value="3">3.0x</option>
+                                    <option value="3.5">3.5x</option>
+                                    <option value="4">4.0x</option>
+                                </select>
+                            </div>
+
+                            <div class="playback-buttons">
+                                <button id="prev-sentence" class="control-btn secondary" title="Previous Sentence">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                                        <line x1="5" y1="19" x2="5" y2="5"></line>
+                                    </svg>
+                                </button>
+                                <button id="play-pause" class="control-btn primary-circle" title="Play/Pause">
+                                    <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    <svg id="pause-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="32"
+                                        height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="6" y="4" width="4" height="16"></rect>
+                                        <rect x="14" y="4" width="4" height="16"></rect>
+                                    </svg>
+                                </button>
+                                <button id="next-sentence" class="control-btn secondary" title="Next Sentence">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="voice-control" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <span class="label"
+                                    style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Voice</span>
+                                <select id="voice-select"
+                                    style="padding: 0.25rem 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background-color: var(--bg-color); font-size: 0.875rem; color: var(--text-primary); cursor: pointer; max-width: 150px;">
+                                    <option value="">Default</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="loading-overlay" class="hidden">
+                    <div class="spinner"></div>
+                    <p id="loading-text">Processing Paper...</p>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
